@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Raven Command Center • Cuervo OS</title>
+<meta name="color-scheme" content="dark">
+<style>
+:root{
+  --blue:#1f8bff;
+  --cyan:#4ac3ff;
+  --lava:#ff5a00;
+  --fire:#ffb000;
+  --ink:#eaf2ff;
+  --muted:#9fb7e8;
+  --panel:rgba(8,12,28,.82);
+  --line:rgba(255,255,255,.14);
+}
+*{box-sizing:border-box}
+html,body{
+  height:100%;
+  margin:0;
+  overflow:hidden;
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;
+  background:#02030a;
+  color:var(--ink);
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:-60px;
+  background:
+    radial-gradient(900px 520px at 50% 48%, rgba(255,87,0,.22), transparent 60%),
+    radial-gradient(760px 460px at 50% 56%, rgba(31,139,255,.16), transparent 67%),
+    radial-gradient(1300px 820px at 50% 50%, rgba(5,12,32,.90), #02030a 70%);
+  filter:blur(8px);
+}
+.stars{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.45) 1px, transparent 1px);
+  background-size:54px 54px;
+  opacity:.16;
+  animation:starMove 32s linear infinite;
+}
+@keyframes starMove{to{transform:translate3d(-54px,54px,0)}}
+
+.app{
+  position:fixed;
+  inset:0;
+  display:grid;
+  place-items:center;
+  padding:24px;
+}
+
+.topBar{
+  position:fixed;
+  top:14px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:30;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:rgba(4,8,22,.62);
+  backdrop-filter:blur(12px);
+  box-shadow:0 18px 55px rgba(0,0,0,.45);
+}
+.btn{
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(31,139,255,.14);
+  color:var(--ink);
+  border-radius:999px;
+  padding:10px 13px;
+  cursor:pointer;
+  font-size:13px;
+}
+.btn:hover{filter:brightness(1.15)}
+.btn.bad{background:rgba(239,71,111,.16)}
+.btn.good{background:rgba(32,201,151,.16)}
+.btn.fire{background:rgba(255,90,0,.16)}
+
+.ravenStage{
+  position:relative;
+  width:min(88vmin,760px);
+  height:min(88vmin,760px);
+  display:grid;
+  place-items:center;
+}
+.fireRing{
+  position:absolute;
+  inset:12%;
+  border-radius:50%;
+  background:
+    conic-gradient(from 0deg, rgba(255,90,0,.05), rgba(255,176,0,.55), rgba(31,139,255,.26), rgba(255,90,0,.62), rgba(255,90,0,.05));
+  filter:blur(2px) drop-shadow(0 0 22px rgba(255,92,0,.30));
+  animation:ringSpin 18s linear infinite;
+  opacity:.65;
+}
+.fireRing::after{
+  content:"";
+  position:absolute;
+  inset:7%;
+  border-radius:50%;
+  background:#02030a;
+}
+@keyframes ringSpin{to{transform:rotate(360deg)}}
+.ravenGlow{
+  position:absolute;
+  inset:9%;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(255,92,0,.36),transparent 58%);
+  filter:blur(28px);
+  animation:pulse 3.2s ease-in-out infinite;
+}
+@keyframes pulse{
+  0%,100%{opacity:.55;transform:scale(.98)}
+  50%{opacity:.95;transform:scale(1.04)}
+}
+.ravenCore{
+  position:relative;
+  width:62%;
+  aspect-ratio:1/1;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  z-index:4;
+  filter:drop-shadow(0 0 28px rgba(255,92,0,.42)) drop-shadow(0 0 26px rgba(31,139,255,.18));
+}
+.ravenCore img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  border-radius:50%;
+}
+.ravenFallback{
+  font-size:90px;
+  width:100%;
+  height:100%;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(255,90,0,.18),rgba(31,139,255,.08),transparent 72%);
+}
+.ravenTitle{
+  position:absolute;
+  bottom:8%;
+  left:50%;
+  transform:translateX(-50%);
+  text-align:center;
+  z-index:5;
+  pointer-events:none;
+  text-transform:uppercase;
+  letter-spacing:.18em;
+}
+.ravenTitle b{font-size:clamp(16px,3.3vmin,31px)}
+.ravenTitle small{display:block;color:var(--muted);font-size:11px;margin-top:5px}
+
+.orbitLayer{
+  position:absolute;
+  inset:0;
+  z-index:8;
+  pointer-events:none;
+}
+.orbit{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:92px;
+  height:92px;
+  margin:-46px 0 0 -46px;
+  transform:rotate(var(--a)) translateX(var(--r)) rotate(calc(-1 * var(--a)));
+  pointer-events:auto;
+  border:1px solid rgba(255,255,255,.14);
+  background:
+    radial-gradient(90px 60px at 30% 0%, rgba(74,195,255,.26), transparent 62%),
+    rgba(8,12,28,.76);
+  backdrop-filter:blur(10px);
+  border-radius:24px;
+  box-shadow:0 18px 46px rgba(0,0,0,.42),0 0 22px rgba(31,139,255,.14);
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  transition:transform .25s ease, filter .25s ease, border-color .25s ease;
+}
+.orbit:hover{
+  filter:brightness(1.18);
+  border-color:rgba(255,176,0,.42);
+}
+.orbit.open{
+  outline:2px solid rgba(32,201,151,.75);
+}
+.orbit img{
+  width:62px;
+  height:62px;
+  object-fit:cover;
+  border-radius:18px;
+}
+.orbit .emoji{font-size:32px}
+.orbitName{
+  position:absolute;
+  top:100%;
+  left:50%;
+  transform:translateX(-50%);
+  margin-top:8px;
+  white-space:nowrap;
+  max-width:190px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  padding:6px 9px;
+  border-radius:999px;
+  font-size:11px;
+  color:var(--ink);
+  background:rgba(0,0,0,.38);
+  border:1px solid rgba(255,255,255,.12);
+}
+.dropHint{
+  position:absolute;
+  left:50%;
+  bottom:18px;
+  transform:translateX(-50%);
+  color:var(--muted);
+  font-size:12px;
+  z-index:5;
+}
+
+.tablet{
+  position:fixed;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:min(980px,calc(100vw - 30px));
+  height:min(720px,calc(100vh - 90px));
+  display:none;
+  flex-direction:column;
+  z-index:80;
+  border-radius:30px;
+  border:1px solid rgba(255,255,255,.18);
+  background:
+    radial-gradient(720px 320px at 15% 0%, rgba(31,139,255,.22), transparent 62%),
+    radial-gradient(520px 240px at 82% 100%, rgba(255,90,0,.18), transparent 60%),
+    rgba(5,8,22,.94);
+  box-shadow:
+    inset 0 0 0 8px rgba(0,0,0,.24),
+    0 35px 110px rgba(0,0,0,.78),
+    0 0 45px rgba(31,139,255,.16);
+  overflow:hidden;
+}
+.tablet.show{display:flex}
+.tabletHead{
+  flex:0 0 auto;
+  padding:13px 16px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,.12);
+  cursor:grab;
+  user-select:none;
+}
+.tabletHead:active{cursor:grabbing}
+.tabletTitle{
+  min-width:0;
+  font-weight:800;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.tabletActions{display:flex;gap:8px;flex:0 0 auto}
+.iconBtn{
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);
+  color:var(--ink);
+  border-radius:14px;
+  padding:8px 10px;
+  cursor:pointer;
+}
+.tabletBody{
+  flex:1 1 auto;
+  min-height:0;
+  display:grid;
+  grid-template-columns:300px 1fr;
+}
+.side{
+  border-right:1px solid rgba(255,255,255,.10);
+  padding:12px;
+  overflow:auto;
+}
+.search{
+  width:100%;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(0,0,0,.24);
+  color:var(--ink);
+  border-radius:16px;
+  padding:11px 12px;
+  outline:none;
+  margin-bottom:10px;
+}
+.catRow{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-bottom:10px;
+}
+.cat{
+  font-size:11px;
+  padding:7px 8px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.05);
+  color:var(--muted);
+  cursor:pointer;
+}
+.cat.active{color:var(--ink);background:rgba(31,139,255,.20)}
+.appItem{
+  display:grid;
+  grid-template-columns:46px 1fr;
+  gap:10px;
+  align-items:center;
+  padding:9px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:18px;
+  background:rgba(255,255,255,.045);
+  margin-bottom:8px;
+  cursor:grab;
+}
+.appItem:active{cursor:grabbing}
+.appItem img{
+  width:46px;height:46px;object-fit:cover;border-radius:14px;
+  background:rgba(255,255,255,.06)
+}
+.appItem b{font-size:12px;display:block}
+.appItem small{font-size:11px;color:var(--muted);display:block;margin-top:2px}
+.frameWrap{
+  min-width:0;
+  min-height:0;
+  display:grid;
+  grid-template-rows:auto 1fr;
+}
+.frameTop{
+  padding:10px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  border-bottom:1px solid rgba(255,255,255,.10);
+}
+.frameTop small{
+  color:var(--muted);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+iframe{
+  width:100%;
+  height:100%;
+  border:0;
+  background:#000;
+}
+.emptyFrame{
+  display:grid;
+  place-items:center;
+  text-align:center;
+  color:var(--muted);
+  padding:20px;
+}
+.memoryBar{
+  position:fixed;
+  left:50%;
+  bottom:14px;
+  transform:translateX(-50%);
+  z-index:25;
+  display:flex;
+  gap:8px;
+  align-items:center;
+  max-width:calc(100vw - 28px);
+  overflow:auto;
+  padding:9px;
+  border:1px solid rgba(255,255,255,.13);
+  background:rgba(4,8,22,.62);
+  backdrop-filter:blur(12px);
+  border-radius:999px;
+}
+.memChip{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:7px 10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.10);
+  color:var(--ink);
+  font-size:12px;
+  cursor:pointer;
+}
+.memChip img{width:22px;height:22px;object-fit:cover;border-radius:8px}
+.toast{
+  position:fixed;
+  left:50%;
+  top:80px;
+  transform:translateX(-50%);
+  z-index:120;
+  padding:10px 13px;
+  border-radius:999px;
+  background:rgba(0,0,0,.55);
+  border:1px solid rgba(255,255,255,.14);
+  color:var(--ink);
+  display:none;
+}
+.toast.show{display:block}
+@media(max-width:760px){
+  .tabletBody{grid-template-columns:1fr}
+  .side{height:260px;border-right:0;border-bottom:1px solid rgba(255,255,255,.10)}
+  .orbit{width:74px;height:74px;margin:-37px 0 0 -37px;border-radius:20px}
+  .orbit img{width:50px;height:50px}
+}
+</style>
+</head>
+<body>
+<div class="stars"></div>
+
+<div class="topBar">
+  <button class="btn fire" id="openTabletBtn">👁️ Raven Tablet</button>
+  <button class="btn" id="editBtn">⚙️ Editar Órbitas</button>
+  <button class="btn good" id="restoreBtn">🚀 Restaurar sesión</button>
+  <button class="btn" id="fullscreenBtn">⛶ Fullscreen</button>
+</div>
+
+<div class="app">
+  <div class="ravenStage" id="stage">
+    <div class="fireRing"></div>
+    <div class="ravenGlow"></div>
+
+    <div class="ravenCore" id="ravenCore" title="Abrir Raven Tablet">
+      <img src="assets/logos/cuervo-lava.png" alt="Cuervo Lava" onerror="this.remove();document.querySelector('.ravenCore').innerHTML='<div class=&quot;ravenFallback&quot;>🐦‍⬛</div>'">
+    </div>
+
+    <div class="orbitLayer" id="orbitLayer"></div>
+
+    <div class="ravenTitle">
+      <b>Raven Command Center</b>
+      <small>Cuervo OS • Tech Blue Ecosystem</small>
+    </div>
+  </div>
+</div>
+
+<div class="tablet" id="tablet">
+  <div class="tabletHead" id="tabletHead">
+    <div class="tabletTitle" id="tabletTitle">📱 Raven Tablet</div>
+    <div class="tabletActions">
+      <button class="iconBtn" id="organizeBtn" title="Centrar tablet">🧲</button>
+      <button class="iconBtn" id="openNewBtn" title="Abrir en pestaña nueva">↗</button>
+      <button class="iconBtn" id="closeTabletBtn">✕</button>
+    </div>
+  </div>
+  <div class="tabletBody">
+    <aside class="side">
+      <input class="search" id="search" placeholder="Buscar app..." />
+      <div class="catRow" id="catRow"></div>
+      <div id="appList"></div>
+    </aside>
+    <main class="frameWrap">
+      <div class="frameTop">
+        <small id="currentUrl">Selecciona una app para abrir dentro de la tablet.</small>
+        <button class="btn" id="clearFrameBtn">Limpiar</button>
+      </div>
+      <div id="frameBox" class="emptyFrame">
+        <div>
+          <h2>🦅 Raven Tablet</h2>
+          <p>Click en cualquier app u órbita para abrirla aquí.</p>
+          <p>También puedes arrastrar una app desde la lista y soltarla en una órbita.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="memoryBar" id="memoryBar"></div>
+<div class="toast" id="toast">Listo</div>
+
+<script>
+const ECOSYSTEM = {
+  ecosystemName: "CUERVO OS",
+  version: "2.0",
+  author: "Cuervo Inc",
+  defaultTheme: "techblue",
+  logos: [
+    { logoName:"TV4YOU_STREAMING_CORE", displayName:"TV4YOU Streaming", icon:"📺", category:"TV", description:"Streaming TV platform", version:"1.0", featured:true, appUrl:"https://cuervo-123.github.io/tv4you/", logoFile:"assets/logos/tv4you-streaming-core.png" },
+    { logoName:"MUNDOVISION_JP_PORTAL", displayName:"Mundo Vision JP", icon:"🌎", category:"TV", description:"Mundo Vision JP portal", version:"1.0", featured:true, appUrl:"https://cuervo-123.github.io/mundo-vision-jp/", logoFile:"assets/logos/mundovision-jp-portal.png" },
+    { logoName:"MITV_STATION_10_3_COMMAND", displayName:"Mi TV Station 10.3", icon:"🧩", category:"TV", description:"App Organizer & IPTV Hub", version:"10.3", featured:true, appUrl:"https://cuervo-123.github.io/mi-tv-station-v-10.3/", logoFile:"assets/logos/mitv-station-10-3-command.png" },
+    { logoName:"IPTV_CUERVO_INC", displayName:"IPTV Cuervo Inc", icon:"📡", category:"TV", description:"IPTV Central", version:"1.0", featured:false, appUrl:"https://cuervo-123.github.io/iptv-by-cuervo-inc/", logoFile:"assets/logos/iptv-cuervo-inc.png" },
+    { logoName:"TECHBLUE_PRESSURE_CARE", displayName:"TechBlue Pressure Care", icon:"❤️", category:"HEALTH", description:"Blood Pressure Care", version:"2.0", featured:true, appUrl:"https://cuervo-123.github.io/techblue-pressure-care-Public-v2/", logoFile:"assets/logos/techblue-pressure-care.png" },
+    { logoName:"RADIO_GLOBAL_STATION", displayName:"Radio Global Station", icon:"📻", category:"RADIO", description:"Global Radio Station", version:"2.0", featured:true, appUrl:"https://cuervo-123.github.io/radio-pro-v2/", logoFile:"assets/logos/radio-global-station.png" },
+    { logoName:"RADIO_PRO_STUDIO", displayName:"Radio Pro Studio", icon:"🎙️", category:"RADIO", description:"Radio Studio + Database + YouTube", version:"1.0", featured:true, appUrl:"https://cuervo-123.github.io/radio-pro/", logoFile:"assets/logos/radio-pro-studio.png" },
+    { logoName:"RADIO_GLOBAL_EXTEND", displayName:"Radio Global Extend", icon:"🌐", category:"RADIO", description:"Mini PiP & Random Engine", version:"1.0", featured:false, appUrl:"https://cuervo-123.github.io/radio-global-extend-v1/", logoFile:"assets/logos/radio-global-extend.png" },
+    { logoName:"WORLDTV4YOU_COPLAYER", displayName:"WorldTV4YOU CoPlayer", icon:"🛡️", category:"TV", description:"Protected TV Co-Player", version:"1.0", featured:true, appUrl:"https://cuervo-123.github.io/worldtv4you/", logoFile:"assets/logos/worldtv4you-coplayer.png" },
+    { logoName:"PLAYNOW_4MONITORS_BUILDER", displayName:"PlayNow 4 Monitors", icon:"🎬", category:"MOVIES", description:"TMDB Builder + Auto Preview", version:"1.0", featured:true, appUrl:"https://cuervo-123.github.io/movie-cards-play-now/", logoFile:"assets/logos/playnow-4monitors-builder.png" },
+    { logoName:"MITV_STATION_10_7_FOCUS", displayName:"Mi TV Station 10.7 Focus", icon:"🎯", category:"TV", description:"Focus Full Screen Edition", version:"10.7", featured:true, appUrl:"https://cuervo-123.github.io/-mi-tv-station-v-10.7-focus-full-screen/", logoFile:"assets/logos/mitv-station-10-7-focus.png" },
+    { logoName:"GLOBALTV4YOU_TRADING", displayName:"GlobalTV4YOU Trading", icon:"📈", category:"TRADING", description:"TV + Trading + YouTube", version:"1.0", featured:true, appUrl:"https://cuervo-123.github.io/GLOBALTV4YOU/", logoFile:"assets/logos/globaltv4you-trading.png" },
+    { logoName:"PLAYLIST_CREATOR_PRO", displayName:"Playlist Creator Pro", icon:"📝", category:"TOOLS", description:"Playlist Creator & Editor", version:"1.0", featured:true, appUrl:"https://cuervo-123.github.io/TV-STATION-PLAYLIST-CREATOR-PRO/", logoFile:"assets/logos/playlist-creator-pro.png" },
+    { logoName:"TAXI_INTERCITY_SUPABASE", displayName:"Taxi Intercity", icon:"🚕", category:"TAXI", description:"Fleet Management + Supabase", version:"1.0", featured:true, appUrl:"https://cuervo-123.github.io/taxi-intercity-co/", logoFile:"assets/logos/taxi-intercity-supabase.png" },
+    { logoName:"TV_FREEDOM_APP", displayName:"TV Freedom App", icon:"🗽", category:"TV", description:"Freedom IPTV Browser", version:"1.0", featured:false, appUrl:"https://cuervo-123.github.io/tv-freedom-app/", logoFile:"assets/logos/tv-freedom-app.png" },
+    { logoName:"IPTV_CURVY_MONITORS", displayName:"IPTV Curvy Monitors", icon:"🖥️", category:"TV", description:"Curvy Multiple Monitors", version:"1.0", featured:false, appUrl:"https://cuervo-123.github.io/iptv-with-curvy-multtiple-monitors-effects-v1/", logoFile:"assets/logos/iptv-curvy-monitors.png" },
+    { logoName:"EDITOR_IPTV_PLUS", displayName:"Editor IPTV Plus", icon:"✏️", category:"TOOLS", description:"IPTV Editor Suite", version:"1.0", featured:true, appUrl:"https://cuervo-123.github.io/Editor-iptv-Plus/", logoFile:"assets/logos/editor-iptv-plus.png" },
+    { logoName:"AUTO_MINIPIP_NAVIGATION", displayName:"Auto MiniPiP Navigation", icon:"📌", category:"TOOLS", description:"Auto MiniPiP Navigation Hub", version:"1.0", featured:true, appUrl:"https://cuervo-123.github.io/apptv-auto-minipip/", logoFile:"assets/logos/auto-minipip-navigation.png" },
+    { logoName:"FILM_TV_PRO_INTEGRATION", displayName:"Film TV Pro Integration", icon:"🍿", category:"MOVIES", description:"Film TV Pro Integration", version:"1.0", featured:true, appUrl:"https://cuervo-123.github.io/film-tv-pro-integration-/", logoFile:"assets/logos/film-tv-pro-integration.png" },
+    { logoName:"TV_CH_VERIFICADOR_PRO", displayName:"TV CH Verificador Pro", icon:"✅", category:"TOOLS", description:"IPTV Channel Verifier", version:"1.0", featured:true, appUrl:"https://cuervo-123.github.io/tv-ch-verificador-pro/", logoFile:"assets/logos/tv-ch-verificador-pro.png" },
+    { logoName:"LATERAL_VIEW_TV_PRO_V3", displayName:"Lateral View TV Pro V3", icon:"📰", category:"TV", description:"Lateral News View", version:"3.0", featured:false, appUrl:"https://cuervo-123.github.io/lateral-view-my-tv-station-pro-v3/", logoFile:"assets/logos/lateral-view-tv-pro-v3.png" },
+    { logoName:"W3U_READER_IPTV_PLUS", displayName:"W3U Reader IPTV Plus", icon:"📂", category:"TOOLS", description:"W3U Reader IPTV Plus", version:"1.0", featured:true, appUrl:"https://cuervo-123.github.io/w3u-reader-iptv-plus/", logoFile:"assets/logos/w3u-reader-iptv-plus.png" }
+  ]
+};
+
+const $ = (id)=>document.getElementById(id);
+const tablet = $("tablet");
+const tabletHead = $("tabletHead");
+const tabletTitle = $("tabletTitle");
+const frameBox = $("frameBox");
+const currentUrl = $("currentUrl");
+const toastEl = $("toast");
+
+const KEYS = {
+  orbit:"cuervo_os_orbits_v1",
+  usage:"cuervo_os_usage_v1",
+  history:"cuervo_os_history_v1",
+  tablet:"cuervo_os_tablet_pos_v1",
+  session:"cuervo_os_last_session_v1"
+};
+
+let currentApp = null;
+let currentCategory = "ALL";
+let editMode = false;
+
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  clearTimeout(window.__toast);
+  window.__toast = setTimeout(()=>toastEl.classList.remove("show"), 1400);
+}
+function loadJSON(k, fallback){
+  try{return JSON.parse(localStorage.getItem(k)) ?? fallback}catch(_){return fallback}
+}
+function saveJSON(k, v){localStorage.setItem(k, JSON.stringify(v))}
+function appByName(name){return ECOSYSTEM.logos.find(a=>a.logoName===name)}
+function appTitle(app){return app.displayName || app.logoName.replaceAll("_"," ")}
+
+function defaultOrbits(){
+  const featured = ECOSYSTEM.logos.filter(a=>a.featured).slice(0,8).map(a=>a.logoName);
+  while(featured.length<8) featured.push(ECOSYSTEM.logos[featured.length]?.logoName || "");
+  return featured;
+}
+function getOrbits(){
+  const saved = loadJSON(KEYS.orbit, null);
+  return Array.isArray(saved) && saved.length===8 ? saved : defaultOrbits();
+}
+function setOrbits(orbits){saveJSON(KEYS.orbit, orbits)}
+
+function renderOrbits(){
+  const layer = $("orbitLayer");
+  layer.innerHTML = "";
+  const orbits = getOrbits();
+  const usage = loadJSON(KEYS.usage, {});
+  const openSession = loadJSON(KEYS.session, []);
+  const count = 8;
+  for(let i=0;i<count;i++){
+    const app = appByName(orbits[i]) || ECOSYSTEM.logos[i];
+    const use = usage[app.logoName] || 0;
+    const r = Math.max(220, 310 - Math.min(65, use * 4));
+    const angle = (360/count) * i - 90;
+    const div = document.createElement("div");
+    div.className = "orbit" + (openSession.some(x=>x.logoName===app.logoName) ? " open" : "");
+    div.style.setProperty("--a", angle + "deg");
+    div.style.setProperty("--r", r + "px");
+    div.dataset.index = i;
+    div.dataset.logoName = app.logoName;
+    div.innerHTML = `
+      <img src="${app.logoFile}" alt="" onerror="this.remove();this.parentElement.insertAdjacentHTML('afterbegin','<span class=&quot;emoji&quot;>${app.icon||"🚀"}</span>')">
+      <div class="orbitName">${app.icon||""} ${appTitle(app)}</div>
+    `;
+    div.addEventListener("click",()=>openApp(app));
+    div.addEventListener("dragover",(e)=>{ if(editMode){e.preventDefault(); div.style.borderColor="rgba(255,176,0,.8)"; }});
+    div.addEventListener("dragleave",()=>{ div.style.borderColor=""; });
+    div.addEventListener("drop",(e)=>{
+      e.preventDefault();
+      div.style.borderColor="";
+      const logoName = e.dataTransfer.getData("text/plain");
+      const target = appByName(logoName);
+      if(!target) return;
+      const arr = getOrbits();
+      arr[i] = logoName;
+      setOrbits(arr);
+      renderOrbits();
+      toast("Órbita asignada ✅");
+    });
+    layer.appendChild(div);
+  }
+}
+
+function renderCategories(){
+  const cats = ["ALL", ...Array.from(new Set(ECOSYSTEM.logos.map(a=>a.category))).sort()];
+  const row = $("catRow");
+  row.innerHTML = "";
+  cats.forEach(cat=>{
+    const b=document.createElement("button");
+    b.className="cat" + (cat===currentCategory ? " active":"");
+    b.textContent=cat;
+    b.onclick=()=>{currentCategory=cat;renderCategories();renderAppList();};
+    row.appendChild(b);
+  });
+}
+
+function renderAppList(){
+  const q = $("search").value.trim().toLowerCase();
+  const list = $("appList");
+  list.innerHTML = "";
+  ECOSYSTEM.logos
+    .filter(app=>currentCategory==="ALL" || app.category===currentCategory)
+    .filter(app=>{
+      const txt = (app.logoName+" "+appTitle(app)+" "+app.category+" "+app.description).toLowerCase();
+      return !q || txt.includes(q);
+    })
+    .forEach(app=>{
+      const div=document.createElement("div");
+      div.className="appItem";
+      div.draggable=true;
+      div.dataset.logoName=app.logoName;
+      div.innerHTML=`
+        <img src="${app.logoFile}" alt="" onerror="this.style.display='none'">
+        <div>
+          <b>${app.icon||"🚀"} ${appTitle(app)}</b>
+          <small>${app.category} • v${app.version}</small>
+        </div>
+      `;
+      div.addEventListener("click",()=>openApp(app));
+      div.addEventListener("dragstart",(e)=>{
+        editMode=true;
+        e.dataTransfer.setData("text/plain", app.logoName);
+        toast("Suelta sobre una órbita 🎯");
+      });
+      div.addEventListener("dragend",()=>{});
+      list.appendChild(div);
+    });
+}
+
+function openTablet(){
+  const pos = loadJSON(KEYS.tablet, null);
+  if(pos && typeof pos.left==="string"){
+    tablet.style.left = pos.left;
+    tablet.style.top = pos.top;
+    tablet.style.transform = "none";
+    tablet.dataset.moved = "true";
+  }else if(!tablet.dataset.moved){
+    tablet.style.left="50%";
+    tablet.style.top="50%";
+    tablet.style.transform="translate(-50%,-50%)";
+  }
+  tablet.classList.add("show");
+  renderCategories();
+  renderAppList();
+}
+
+function closeTablet(){
+  tablet.classList.remove("show");
+  saveTabletPos();
+}
+
+function openApp(app){
+  currentApp = app;
+  openTablet();
+  tabletTitle.textContent = `${app.icon||"🚀"} ${appTitle(app)}`;
+  currentUrl.textContent = app.appUrl;
+  frameBox.className = "";
+  frameBox.innerHTML = `<iframe src="${app.appUrl}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture"></iframe>`;
+  trackUsage(app);
+  addHistory(app);
+  updateSession(app);
+  renderMemory();
+  renderOrbits();
+}
+
+function trackUsage(app){
+  const usage = loadJSON(KEYS.usage, {});
+  usage[app.logoName] = (usage[app.logoName] || 0) + 1;
+  saveJSON(KEYS.usage, usage);
+}
+function addHistory(app){
+  let hist = loadJSON(KEYS.history, []);
+  hist = hist.filter(x=>x.logoName!==app.logoName);
+  hist.unshift({logoName:app.logoName, time:Date.now()});
+  hist = hist.slice(0,10);
+  saveJSON(KEYS.history, hist);
+}
+function updateSession(app){
+  let s = loadJSON(KEYS.session, []);
+  s = s.filter(x=>x.logoName!==app.logoName);
+  s.unshift({logoName:app.logoName, appUrl:app.appUrl, time:Date.now()});
+  s = s.slice(0,4);
+  saveJSON(KEYS.session, s);
+}
+function renderMemory(){
+  const bar = $("memoryBar");
+  const hist = loadJSON(KEYS.history, []);
+  bar.innerHTML = `<span class="memChip">🕘 Últimos</span>`;
+  hist.slice(0,7).forEach(h=>{
+    const app = appByName(h.logoName);
+    if(!app) return;
+    const chip = document.createElement("button");
+    chip.className="memChip";
+    chip.innerHTML=`<img src="${app.logoFile}" onerror="this.style.display='none'"><span>${appTitle(app)}</span>`;
+    chip.onclick=()=>openApp(app);
+    bar.appendChild(chip);
+  });
+}
+
+function clearFrame(){
+  currentApp = null;
+  currentUrl.textContent = "Selecciona una app para abrir dentro de la tablet.";
+  frameBox.className="emptyFrame";
+  frameBox.innerHTML=`<div><h2>🦅 Raven Tablet</h2><p>Click en cualquier app u órbita para abrirla aquí.</p></div>`;
+}
+
+function restoreSession(){
+  const s = loadJSON(KEYS.session, []);
+  if(!s.length) return toast("No hay sesión guardada");
+  const app = appByName(s[0].logoName);
+  if(app) openApp(app);
+  toast("Sesión restaurada 🚀");
+}
+
+function saveTabletPos(){
+  if(tablet.dataset.moved){
+    saveJSON(KEYS.tablet, {left:tablet.style.left, top:tablet.style.top});
+  }
+}
+
+function centerTablet(){
+  tablet.style.left="50%";
+  tablet.style.top="50%";
+  tablet.style.transform="translate(-50%,-50%)";
+  delete tablet.dataset.moved;
+  localStorage.removeItem(KEYS.tablet);
+  toast("Tablet centrada 🧲");
+}
+
+let drag={on:false,dx:0,dy:0};
+tabletHead.addEventListener("pointerdown",(e)=>{
+  if(e.target.closest("button")) return;
+  drag.on=true;
+  const r = tablet.getBoundingClientRect();
+  drag.dx = e.clientX - r.left;
+  drag.dy = e.clientY - r.top;
+  tablet.style.left = r.left + "px";
+  tablet.style.top = r.top + "px";
+  tablet.style.transform = "none";
+  tablet.dataset.moved = "true";
+  tabletHead.setPointerCapture(e.pointerId);
+});
+tabletHead.addEventListener("pointermove",(e)=>{
+  if(!drag.on) return;
+  let x = e.clientX - drag.dx;
+  let y = e.clientY - drag.dy;
+  x = Math.max(6, Math.min(window.innerWidth - tablet.offsetWidth - 6, x));
+  y = Math.max(6, Math.min(window.innerHeight - tablet.offsetHeight - 6, y));
+  tablet.style.left = x + "px";
+  tablet.style.top = y + "px";
+});
+tabletHead.addEventListener("pointerup",()=>{drag.on=false;saveTabletPos();});
+tabletHead.addEventListener("pointercancel",()=>{drag.on=false;saveTabletPos();});
+
+$("openTabletBtn").onclick=openTablet;
+$("ravenCore").onclick=openTablet;
+$("closeTabletBtn").onclick=closeTablet;
+$("clearFrameBtn").onclick=clearFrame;
+$("restoreBtn").onclick=restoreSession;
+$("organizeBtn").onclick=centerTablet;
+$("openNewBtn").onclick=()=>{
+  if(currentApp) window.open(currentApp.appUrl, "_blank", "noopener");
+  else toast("Primero abre una app");
+};
+$("fullscreenBtn").onclick=()=>{
+  if(!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+  else document.exitFullscreen?.();
+};
+$("editBtn").onclick=()=>{
+  editMode=!editMode;
+  toast(editMode ? "Modo edición ON: arrastra apps a órbitas" : "Modo edición OFF");
+};
+$("search").addEventListener("input",renderAppList);
+
+renderOrbits();
+renderCategories();
+renderAppList();
+renderMemory();
+</script>
+</body>
+</html>
